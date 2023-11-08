@@ -10,16 +10,27 @@ http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/cu
 	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="69332c9b-d0b7-4d59-86ce-f0fabd2f0321" >
 		<http:listener-connection host="0.0.0.0" port="8082" />
 	</http:listener-config>
-	<apikit:config outboundHeadersMapName="outboundHeadersMapName" httpStatusVarName="httpStatus" doc:name="Router" doc:id="2b1a8dd1-3404-42e7-bf1f-872d05f5a9ab" name="Router" api="resource::cdf1abc7-b4a4-4c3a-81d1-6185b7fff788:api-bs-mercatino:1.0.8:raml:zip:api-bs-mercatino.raml" parser="RAML"/>
+	<apikit:config outboundHeadersMapName="outboundHeadersMapName" httpStatusVarName="httpStatus" doc:name="Router" doc:id="2b1a8dd1-3404-42e7-bf1f-872d05f5a9ab" name="Router" api="resource::cdf1abc7-b4a4-4c3a-81d1-6185b7fff788:api-bs-mercatino:1.0.13:raml:zip:api-bs-mercatino.raml" parser="RAML"/>
 	<http:request-config name="HTTP_Request_configuration_localhost(8081)-ms-mercatino" doc:name="HTTP Request configuration" doc:id="75bbb743-bc31-4b90-9096-21dbbb5b0d82">
 		<http:request-connection host="localhost" port="8081" />
 	</http:request-config>
 	<db:config name="Database_Config" doc:name="Database Config" doc:id="a254ec7f-954e-4f25-9d5d-83df1eaa293e" >
 		<db:my-sql-connection host="localhost" port="3306" user="root" password="password" database="mercatinodb" />
 	</db:config>
-	<http:request-config name="HTTP_Request_configuration_ms_mercatino_item" doc:name="HTTP Request configuration" doc:id="b7a9ed6d-ff99-4bf2-ac0a-a9259a704c58" />
+	<http:request-config name="HTTP_Request_configuration_ms_mercatino_item" doc:name="HTTP Request configuration" doc:id="b7a9ed6d-ff99-4bf2-ac0a-a9259a704c58" >
+		<http:request-connection host="localhost" port="8084" />
+	</http:request-config>
 	<http:request-config name="HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="5f7de7bd-ce0b-461b-a0fe-4f333c0d5160" >
 		<http:request-connection host="localhost" port="8084" />
+	</http:request-config>
+	<http:request-config name="HTTP_Request_POST_item" doc:name="HTTP Request configuration" doc:id="a21be5c8-72a0-41cc-b51b-d44f60c28b9a" >
+		<http:request-connection host="localhost" port="8084" />
+	</http:request-config>
+	<http:request-config name="HTTP_Request_GET_order" doc:name="HTTP Request configuration" doc:id="e70f632e-119c-40a0-aaec-cedb9df35680" >
+		<http:request-connection host="localhost" port="8083"/>
+	</http:request-config>
+	<http:request-config name="HTTP_Request_POST_order" doc:name="HTTP Request configuration" doc:id="ba744409-1ce5-4693-bca9-2ac3372ae44c" >
+		<http:request-connection host="localhost" port="8083" />
 	</http:request-config>
 	<flow name="bs-mercatinoFlow" doc:id="4847bd94-255e-406c-b9db-2528fd86e913" >
 		<http:listener doc:name="Listener" doc:id="63740a24-003a-48ae-a794-8c91b5d48fbf" config-ref="HTTP_Listener_config" path="/*"/>
@@ -127,7 +138,7 @@ output application/json skipNullOn = "everywhere"
 			<http:uri-params ><![CDATA[#[output application/java
 ---
 {
-	"user_id" : attributes.headers.UserId
+	"user_id" : attributes.headers.user_id
 }]]]></http:uri-params>
 		</http:request>
 		<choice doc:name="Check user" doc:id="01fccbdd-155b-4944-86e5-7d8b1a476406" >
@@ -205,7 +216,7 @@ output application/json
 			<otherwise >
 				<choice doc:name="Check ID" doc:id="ec130a6f-a345-4413-a82f-a26436c27514">
 					<when expression="#[!isEmpty(vars.searchParams.user_id)]">
-						<http:request method="GET" doc:name="Request ms-GET(user_id)" doc:id="ae156678-788c-4f2d-b7de-be871bd511a7" config-ref="HTTP_Request_configuration_localhost(8081)-ms-mercatino" path="/User/{user_id}" sendCorrelationId="ALWAYS" responseTimeout="100000">
+						<http:request method="GET" doc:name="Request ms-GET(user_id)" doc:id="ae156678-788c-4f2d-b7de-be871bd511a7" config-ref="HTTP_Request_configuration_localhost(8081)-ms-mercatino" path="/User/{user_id}" sendCorrelationId="ALWAYS" responseTimeout="60000">
 					<http:headers><![CDATA[#[output application/java
 ---
 {
@@ -421,5 +432,217 @@ output application/json
 payload]]></ee:set-payload>
 			</ee:message>
 		</ee:transform>
+	</flow>
+	<flow name="get:\Item:application\json:Router" doc:id="acf6c069-8cf7-4ad5-ace8-db35457601a5" >
+		<http:request method="GET" doc:name="Request" doc:id="733e9b9c-7838-489b-b5e4-a1394424524f" path="/Item" config-ref="HTTP_Request_configuration">
+			<http:headers ><![CDATA[#[output application/java
+---
+{
+	"Content-Type" : "application/json"
+}]]]></http:headers>
+			<http:query-params ><![CDATA[#[output application/java
+---
+{
+	"Name" : attributes.queryParams.Name
+}]]]></http:query-params>
+		</http:request>
+	</flow>
+	<flow name="post:\Item:application\json:Router" doc:id="53ccabc9-126e-4cd2-9255-b38a00962761" >
+		<ee:transform doc:name="Transform Message" doc:id="05ae4278-906f-439d-8cb4-7a0d4831dd84" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="ItemBody" ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<http:request method="GET" doc:name="Request ms-GET(user_id)" doc:id="981d93b6-7d6c-4782-8f23-af4a7a2cada7" config-ref="HTTP_Request_configuration_localhost(8081)-ms-mercatino" path="/User/{user_id}" sendCorrelationId="ALWAYS" responseTimeout="100000" >
+			<http:headers ><![CDATA[#[output application/java
+---
+{
+	"Content-Type" : "application/json"
+}]]]></http:headers>
+			<http:uri-params ><![CDATA[#[output application/json
+---
+{
+	"user_id" : (attributes.headers.UserId) as Number
+}]]]></http:uri-params>
+		</http:request>
+		<choice doc:name="Verifica esistenza ID" doc:id="0a28ae43-aceb-4d70-a593-69d16b19b15e" >
+			<when expression='#[payload.data.message == "No User Found"]' >
+				<ee:transform doc:name="Utente inesistente" doc:id="68cf9d7e-5374-4974-b249-16bfd039014a" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+
+{
+	"meta": {
+		"message": "Failed",
+		"code": -1
+	},
+	"data": {
+		"message": "No User Found"
+	}
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</when>
+			<otherwise >
+				<choice doc:name="Check user" doc:id="11e078e6-52c4-466f-8c61-09120f62bc65" >
+					<when expression='#[payload.data.User.UserType == "Admin"]' >
+						<http:request method="POST" doc:name="Request" doc:id="a5ce0187-4643-4440-9388-aa3d8ac4afbd" config-ref="HTTP_Request_POST_item" path="/Item">
+							<http:body ><![CDATA[#[vars.ItemBody]]]></http:body>
+							<http:headers ><![CDATA[#[output application/java
+---
+{
+	"Content-Type" : "application/json"
+}]]]></http:headers>
+						</http:request>
+					</when>
+					<otherwise >
+						<ee:transform doc:name="Utente non autorizzato" doc:id="6ad1791b-5e0d-408d-bbfc-d42bffe78afb" >
+							<ee:message >
+								<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+
+{
+	"meta": {
+		"message": "Failed",
+		"code": -1
+	},
+	"data": {
+		"message": "You don't have Admin clearance"
+	}
+}]]></ee:set-payload>
+							</ee:message>
+						</ee:transform>
+					</otherwise>
+				</choice>
+			</otherwise>
+		</choice>
+	</flow>
+	<flow name="get:\Order\(user_id):application\json:Router" doc:id="53a6d345-4f82-4235-91f1-ac5a218b1447" >
+		<ee:transform doc:name="Variabile SearchParams" doc:id="350eafc2-34c0-46de-97d8-e083da7cb50a" >
+			<ee:message />
+			<ee:variables >
+				<ee:set-variable variableName="searchParams" ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"inputUserId":(attributes.uriParams.user_id),
+	"UserId":(attributes.headers.user_id)
+}]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<choice doc:name="Check ID " doc:id="18442bff-9ff6-4e25-bfe3-b1a017daeee7" >
+			<when expression="#[(attributes.uriParams.user_id == attributes.headers.user_id)]" >
+				<ee:transform doc:name="Transform Message" doc:id="5f3de7e5-329b-470f-9180-6cb0630de0d1">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+(vars.searchParams.inputUserId)as Number]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<http:request method="GET" doc:name="Request_order_byUserId" doc:id="e1b78b04-840e-4292-bb79-8de401ba2e1e" config-ref="HTTP_Request_GET_order" path="/Order/byUser/{user_id}">
+					<http:headers><![CDATA[#[output application/java
+---
+{
+	"Content-Type" : "application/json"
+}]]]></http:headers>
+					<http:uri-params><![CDATA[#[%dw 2.0
+output application/json
+---
+{
+	"user_id":payload
+}]]]></http:uri-params>
+				</http:request>
+			</when>
+			<otherwise >
+				<http:request method="GET" doc:name="Request User/(user_id)" doc:id="e3454eb5-7bb5-4a34-a4d8-eae42586afb9" config-ref="HTTP_Request_configuration_localhost(8081)-ms-mercatino" path="/User/{user_id}" sendCorrelationId="ALWAYS" responseTimeout="100000" >
+					<http:headers ><![CDATA[#[output application/java
+---
+{
+	"Content-Type" : "application/json"
+}]]]></http:headers>
+					<http:uri-params ><![CDATA[#[output application/java
+---
+{
+	"user_id" : vars.searchParams.UserId
+}]]]></http:uri-params>
+				</http:request>
+				<choice doc:name="Check user" doc:id="8a1b7a58-21f7-4d89-8ada-6d680e3ffb74" >
+					<when expression='#[payload.data.User.UserType == "Admin"]' >
+						<ee:transform doc:name="Transform Message" doc:id="0385bc3f-7075-4bd2-8bda-4a33b534f3ee">
+							<ee:message>
+								<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+
+(vars.searchParams.inputUserId) as Number
+]]></ee:set-payload>
+							</ee:message>
+						</ee:transform>
+						<http:request method="GET" doc:name="Request_order_byUserId1" doc:id="37062e2c-ba74-4e84-b16d-d5610925bc36" config-ref="HTTP_Request_GET_order" path="/Order/byUser/{user_id}" >
+							<http:headers ><![CDATA[#[output application/java
+---
+{
+	"Content-Type" : "application/json"
+}]]]></http:headers>
+							<http:uri-params ><![CDATA[#[%dw 2.0
+output application/json
+---
+{
+	"user_id":payload
+}]]]></http:uri-params>
+						</http:request>
+					</when>
+					<otherwise >
+						<ee:transform doc:name="Utente non autorizzato" doc:id="4ddd72e3-2803-407d-b00b-bb3fd149fb97" >
+							<ee:message >
+								<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+
+{
+	"meta": {
+		"message": "Failed",
+		"code": -1
+	},
+	"data": {
+		"message": "You don't have Admin clearance for this information"
+	}
+}]]></ee:set-payload>
+							</ee:message>
+						</ee:transform>
+					</otherwise>
+				</choice>
+			</otherwise>
+		</choice>
+	</flow>
+	<flow name="post:\Order:application\json:Router" doc:id="3e063ed7-f306-44a1-8c1c-cde199eef7de" >
+		<ee:transform doc:name="Transform Message" doc:id="93bbc698-9fa3-4ad4-bb50-e369f41c3194" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json skipNullOn = "everywhere"
+---
+{
+	"UserId":(attributes.headers.user_id) as Number,
+	"ItemId":(payload.ItemId) as Number,
+	"Address":payload.Address
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<http:request method="POST" doc:name="Request_POST_order" doc:id="99db357c-b24a-4b05-a660-c6cb710eb83a" config-ref="HTTP_Request_POST_order" path="/Order">
+			<http:headers ><![CDATA[#[output application/java
+---
+{
+	"Content-Type" : "application/json"
+}]]]></http:headers>
+		</http:request>
 	</flow>
 </mule>

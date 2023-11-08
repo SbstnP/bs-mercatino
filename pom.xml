@@ -61,13 +61,6 @@
 			<classifier>mule-plugin</classifier>
 		</dependency>
 		<dependency>
-			<groupId>cdf1abc7-b4a4-4c3a-81d1-6185b7fff788</groupId>
-			<artifactId>api-bs-mercatino</artifactId>
-			<version>1.0.8</version>
-			<classifier>raml</classifier>
-			<type>zip</type>
-		</dependency>
-		<dependency>
 			<groupId>org.mule.connectors</groupId>
 			<artifactId>mule-db-connector</artifactId>
 			<version>1.14.0</version>
@@ -77,6 +70,13 @@
 			<groupId>mysql</groupId>
 			<artifactId>mysql-connector-java</artifactId>
 			<version>8.0.30</version>
+		</dependency>
+		<dependency>
+			<groupId>cdf1abc7-b4a4-4c3a-81d1-6185b7fff788</groupId>
+			<artifactId>api-bs-mercatino</artifactId>
+			<version>1.0.13</version>
+			<classifier>raml</classifier>
+			<type>zip</type>
 		</dependency>
 	</dependencies>
 
